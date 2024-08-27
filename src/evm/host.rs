@@ -80,6 +80,7 @@ use crate::{
         onchain::{
             abi_decompiler::fetch_abi_evmole,
             flashloan::{register_borrow_txn, Flashloan},
+            OnChain,
         },
         types::{as_u64, generate_random_address, is_zero, EVMAddress, EVMU256},
         vm::{is_reverted_or_control_leak, EVMState, SinglePostExecution, IN_DEPLOY, IS_FAST_CALL_STATIC},
@@ -1480,6 +1481,15 @@ where
             if let Some(balance) = self.evmstate.get_balance(&receiver) {
                 self.evmstate.set_balance(receiver, *balance + value);
             } else {
+                let on_chain_middleware = self
+                    .middlewares
+                    .read()
+                    .unwrap()
+                    .iter()
+                    .find_map(|m| m.deref().borrow().as_any().downcast_ref::<OnChain>().cloned());
+                if let Some(mut on_chain_middleware) = on_chain_middleware {
+                    self.next_slot = on_chain_middleware.endpoint.get_balance(receiver);
+                }
                 self.evmstate.set_balance(receiver, self.next_slot + value);
             };
         }
