@@ -60,7 +60,6 @@ enum Commands {
 }
 
 fn main() {
-    init_sentry();
     logger::init();
 
     let args = Cli::parse();
